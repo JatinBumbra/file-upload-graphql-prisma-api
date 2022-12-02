@@ -22,6 +22,7 @@ model File {
 model FileVersion {
   id        String   @id @default(uuid())
   name      String
+  key       String
   mimeType  String
   size      Int
   file      File     @relation(fields: [fileId], references: [id])

@@ -23,8 +23,8 @@ const bucketId = process.env.AWS_BUCKET_NAME
 export function getBucket(): FileBucket {
   if (process.env.NODE_ENV === "development") {
     return getLocalBucket()
-  } else if (bucketId) {
-    return getS3Bucket(bucketId)
+    // } else if (bucketId) {
+    //   return getS3Bucket(bucketId)
   } else {
     throw new Error("Bucket not set")
   }
