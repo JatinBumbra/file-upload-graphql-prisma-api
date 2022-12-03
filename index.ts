@@ -3,15 +3,12 @@ import { config } from "dotenv"
 import { graphqlHTTP } from "express-graphql"
 import { createApplication, createModule, gql } from "graphql-modules"
 import { File, Directory, FileVersion } from "@prisma/client"
-import { prismaClient } from "./prisma"
 import { directoryModule } from "./directory/schema"
 import { fileVersionModule } from "./fileVersion/schema"
 import { fileModule } from "./file/schema"
 import { downloadLocalFile, uploadLocalFile } from "./bucket"
 
 config()
-
-const prisma = prismaClient()
 
 const mainModule = createModule({
   id: "main-module",
@@ -23,6 +20,11 @@ const mainModule = createModule({
         name: String!
         createdAt: String!
         updatedAt: String!
+      }
+
+      input PaginationInput {
+        pageLength: Int!
+        page: Int!
       }
 
       type Query {
