@@ -15,6 +15,8 @@ export const directoryModule = createModule({
         parentId: ID
         files: [File]!
         ancestors: [String]!
+        children: Int!
+        size: Int
         directories: [Directory]!
         createdAt: String!
         updatedAt: String!
@@ -50,6 +52,12 @@ export const directoryModule = createModule({
     `,
   ],
   resolvers: {
+    Directory: {
+      children: async ({ id }: { id: Directory["id"] }): Promise<number> =>
+        await directoryService.countDirectoryChildren(prismaClient(), id),
+      size: async ({ id }: { id: Directory["id"] }): Promise<number | null> =>
+        await directoryService.getDirectorySize(prismaClient(), id),
+    },
     Query: {
       getAllDirectories: async () => await prismaClient().directory.findMany(),
       getDirectory: async (_: unknown, { id }: { id: Directory["id"] }) =>
