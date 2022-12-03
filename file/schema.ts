@@ -12,6 +12,7 @@ export const fileModule = createModule({
         id: ID!
         name: String!
         directoryId: ID!
+        ancestors: [String]!
         versions: [FileVersion]
         createdAt: String!
         updatedAt: String!

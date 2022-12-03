@@ -13,6 +13,7 @@ export const directoryModule = createModule({
         name: String!
         parentId: ID
         files: [File]!
+        ancestors: [String]!
         directories: [Directory]!
         createdAt: String!
         updatedAt: String!
@@ -27,6 +28,7 @@ export const directoryModule = createModule({
         createDirectory(name: String!, parentId: String!): Directory!
         renameDirectory(id: ID!, name: String!): Directory!
         deleteDirectory(id: ID!): Boolean!
+        moveDirectory(id: ID!, targetId: ID!): Directory!
       }
     `,
   ],
@@ -51,6 +53,10 @@ export const directoryModule = createModule({
       ) => await directoryService.renameDirectory(prismaClient(), id, name),
       deleteDirectory: async (_: unknown, { id }: { id: Directory["id"] }) =>
         await directoryService.deleteDirectory(prismaClient(), id),
+      moveDirectory: async (
+        _: unknown,
+        { id, targetId }: { id: Directory["id"]; targetId: Directory["id"] }
+      ) => await directoryService.moveDirectory(prismaClient(), id, targetId),
     },
   },
 })

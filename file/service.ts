@@ -61,9 +61,19 @@ export async function moveFile(
   id: File["id"],
   directoryId: File["directoryId"]
 ): Promise<File> {
+  const directory = await client.directory.findUnique({
+    where: { id: directoryId },
+  })
+
+  if (!directory) {
+    throw new Error("Invalid target directory")
+  }
+
+  const { ancestors } = directory
+
   return await client.file.update({
     where: { id },
-    data: { directoryId },
+    data: { directoryId, ancestors: [...ancestors, directoryId] },
     include: { versions: true },
   })
 }
