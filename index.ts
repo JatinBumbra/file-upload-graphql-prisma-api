@@ -7,6 +7,7 @@ import { prismaClient } from "./prisma"
 import { directoryModule } from "./directory/schema"
 import { fileVersionModule } from "./fileVersion/schema"
 import { fileModule } from "./file/schema"
+import { downloadLocalFile } from "./bucket"
 
 config()
 
@@ -54,6 +55,20 @@ const api = createApplication({
 })
 
 const app = express()
+
+app.get("/file", function (req, res) {
+  downloadLocalFile(
+    `${req.protocol}://${req.get("host") ?? ""}${req.originalUrl}`
+  )
+    .then((file) => {
+      res.setHeader("Content-Type", file.ContentType)
+      res.status(200).send(file.Body)
+    })
+    .catch((error: Error) => {
+      res.status(500).json({ error })
+    })
+})
+
 app.use(
   "/graphql",
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
