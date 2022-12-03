@@ -1,5 +1,6 @@
 import { prismaClient } from "../prisma"
 import { createModule, gql } from "graphql-modules"
+import * as fileVersionService from "./serivce"
 
 export const fileVersionModule = createModule({
   id: "fileVersion-module",
@@ -11,6 +12,7 @@ export const fileVersionModule = createModule({
         name: String!
         mimeType: String!
         size: Int!
+        key: String!
         fileId: ID!
         createdAt: String!
         updatedAt: String!
@@ -18,6 +20,7 @@ export const fileVersionModule = createModule({
 
       extend type Query {
         getAllFileVersions: [FileVersion]!
+        requestFileDownload(key: String!): String!
       }
     `,
   ],
@@ -26,6 +29,8 @@ export const fileVersionModule = createModule({
       getAllFileVersions: () => {
         return prismaClient().fileVersion.findMany()
       },
+      requestFileDownload: async (_: unknown, { key }: { key: string }) =>
+        await fileVersionService.requestFileDownload(key),
     },
   },
 })

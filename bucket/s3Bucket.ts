@@ -5,7 +5,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl as getSignedS3Url } from "@aws-sdk/s3-request-presigner"
-import { FakeAwsFile, FileBucket, SIGNED_URL_EXPIRES } from "./bucket"
+import { FakeAwsFile, FileBucket, getSignedUrlExpires } from "./bucket"
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION ?? "",
@@ -26,7 +26,7 @@ export function getS3Bucket(bucketId: string): FileBucket {
 function getSignedUrl(operation: "get" | "put", key: string, bucketId: string) {
   const Command = operation === "get" ? GetObjectCommand : PutObjectCommand
   return getSignedS3Url(s3, new Command({ Bucket: bucketId, Key: key }), {
-    expiresIn: SIGNED_URL_EXPIRES.as("seconds"),
+    expiresIn: getSignedUrlExpires().as("seconds"),
   })
 }
 

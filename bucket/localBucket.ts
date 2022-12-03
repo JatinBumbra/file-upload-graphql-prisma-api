@@ -1,10 +1,10 @@
 import fs from "fs/promises"
 import { DateTime } from "luxon"
 import { dirname, join } from "path"
-import { FakeAwsFile, FileBucket, SIGNED_URL_EXPIRES } from "./bucket"
+import { FakeAwsFile, FileBucket, getSignedUrlExpires } from "./bucket"
 
-const appRoot = require.main?.path[0].split("node_modules")[0].slice(0, -1)
-const rootDir = `${appRoot ?? "."}/.files`
+const appRoot = require.main?.paths[0].split("node_modules")[0].slice(0, -1)
+const rootDir = join(appRoot ?? ".", ".files")
 const baseUrl = `http://localhost:${process.env.PORT!}/file`
 
 export function getLocalBucket(): FileBucket {
@@ -19,7 +19,7 @@ function getSignedUrl(operation: "get" | "put", key: string) {
   const signed = JSON.stringify({
     operation,
     key,
-    expires: DateTime.local().plus(SIGNED_URL_EXPIRES.toMillis()),
+    expires: DateTime.local().plus(getSignedUrlExpires()).toMillis(),
   })
   const url = new URL(baseUrl)
   url.searchParams.set("signed", signed)

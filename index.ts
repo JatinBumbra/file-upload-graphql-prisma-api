@@ -65,12 +65,13 @@ app.get("/file", function (req, res) {
       res.status(200).send(file.Body)
     })
     .catch((error: Error) => {
-      res.status(500).json({ error })
+      console.log(error)
+      res.status(500).send(error.message)
     })
 })
 
 app.use(/\/((?!graphql).)*/, express.raw({ limit: "100000kb", type: "*/*" }))
-app.post("/file", function (req: Request<unknown, unknown, Buffer>, res) {
+app.put("/file", function (req: Request<unknown, unknown, Buffer>, res) {
   const { headers } = req
   const data = {
     ContentType: headers["content-type"] ?? "application/octet-stream",
@@ -84,7 +85,8 @@ app.post("/file", function (req: Request<unknown, unknown, Buffer>, res) {
       res.status(201).send(true)
     })
     .catch((error: Error) => {
-      res.status(500).json({ error })
+      console.log(error)
+      res.status(500).send(error.message)
     })
 })
 
