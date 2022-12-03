@@ -1,3 +1,8 @@
+import {
+  DirectoryContentsResult,
+  Pagination,
+  Sort,
+} from "./../types/interfaces"
 import { Directory, PrismaClient } from "@prisma/client"
 import { deleteFile } from "../file"
 
@@ -34,6 +39,94 @@ export async function getDirectory(
     where: { id },
     include: { directories: true, files: true },
   })
+}
+
+export async function getDirectoryContents(
+  client: PrismaClient,
+  id: Directory["id"],
+  pagination?: Pagination,
+  sort?: Sort
+): Promise<DirectoryContentsResult[]> {
+  const [files, directories] = await client.$transaction([
+    client.file.findMany({
+      where: {
+        ancestors: {
+          has: id,
+        },
+      },
+      include: {
+        versions: {
+          distinct: ["fileId"],
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    }),
+    client.directory.findMany({
+      where: {
+        ancestors: {
+          has: id,
+        },
+      },
+    }),
+  ])
+  const filesWithVersion = files.map((file) => {
+    const { id, name, createdAt, updatedAt, versions } = file
+    const { mimeType, size, key } = versions[0]
+    return {
+      id,
+      name,
+      createdAt,
+      updatedAt,
+      mimeType,
+      size,
+      key,
+      type: "File" as const,
+    }
+  })
+  const directoriesWithVersion = directories.map((dir) => {
+    const { id, name, createdAt, updatedAt } = dir
+
+    return {
+      id,
+      name,
+      createdAt,
+      updatedAt,
+      mimeType: "",
+      size: 0,
+      key: "",
+      type: "Directory" as const,
+    }
+  })
+  const { field = "name", direction = "ASC" } = sort ?? {}
+  const { page = 1, pageLength = 20 } = pagination ?? {}
+
+  const contents =
+    field === "name"
+      ? [...filesWithVersion, ...directoriesWithVersion].sort((a, b) =>
+          a.name > b.name ? 1 : a.name < b.name ? -1 : 0
+        )
+      : [
+          ...directoriesWithVersion.sort((a, b) =>
+            a.name > b.name
+              ? direction === "ASC"
+                ? 1
+                : -1
+              : a.name < b.name
+              ? direction === "DESC"
+                ? -1
+                : 1
+              : 0
+          ),
+          ...filesWithVersion.sort((a, b) =>
+            a[field] > b[field] ? 1 : a[field] < b[field] ? -1 : 0
+          ),
+        ]
+
+  const paginatedContents = contents.slice(
+    (page - 1) * pageLength,
+    (page - 1) * pageLength + pageLength
+  )
+  return paginatedContents
 }
 
 export async function renameDirectory(
