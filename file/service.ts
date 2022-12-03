@@ -52,7 +52,7 @@ export async function getFile(
 ): Promise<File | null> {
   return await client.file.findUnique({
     where: { id },
-    include: { versions: true },
+    include: { versions: { where: { deletedAt: null } } },
   })
 }
 
@@ -101,11 +101,11 @@ export async function deleteFile(
     client.fileVersion.deleteMany({ where: { fileId: id } }),
     client.file.delete({ where: { id } }),
   ])
-  if (fileVersions) {
-    for (const version of fileVersions) {
-      await getBucket().deleteObject(version.key)
-    }
-  }
+  // if (fileVersions) {
+  //   for (const version of fileVersions) {
+  //     await getBucket().deleteObject(version.key)
+  //   }
+  // }
   return true
 }
 
@@ -121,6 +121,6 @@ export async function findFiles(
       },
     },
     orderBy: [{ name: "asc" }],
-    include: { versions: true },
+    include: { versions: { where: { deletedAt: null } } },
   })
 }

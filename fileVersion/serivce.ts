@@ -62,7 +62,7 @@ export async function deleteFileVersion(
   id: FileVersion["id"]
 ): Promise<boolean> {
   const version = await client.fileVersion.delete({ where: { id } })
-  await getBucket().deleteObject(version.key)
+  // await getBucket().deleteObject(version.key)
   return true
 }
 
@@ -85,6 +85,6 @@ export async function getFileVersions(
           take: pagination.pageLength,
         }
       : {}),
-    where: { fileId },
+    where: { fileId, deletedAt: null },
   })
 }

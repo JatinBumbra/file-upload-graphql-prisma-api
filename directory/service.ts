@@ -50,6 +50,7 @@ export async function getDirectoryContents(
   const [files, directories] = await client.$transaction([
     client.file.findMany({
       where: {
+        deletedAt: null,
         ancestors: {
           has: id,
         },
@@ -63,6 +64,7 @@ export async function getDirectoryContents(
     }),
     client.directory.findMany({
       where: {
+        deletedAt: null,
         ancestors: {
           has: id,
         },
@@ -190,14 +192,16 @@ export async function deleteDirectory(
   id: Directory["id"]
 ): Promise<true> {
   const files = await client.file.findMany({
-    where: { ancestors: { has: id } },
+    where: { ancestors: { has: id }, deletedAt: null },
   })
   for (const file of files) {
     await deleteFile(client, file.id)
   }
 
   await client.$transaction([
-    client.directory.deleteMany({ where: { ancestors: { has: id } } }),
+    client.directory.deleteMany({
+      where: { ancestors: { has: id }, deletedAt: null },
+    }),
     client.directory.delete({ where: { id } }),
   ])
 

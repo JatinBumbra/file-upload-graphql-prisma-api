@@ -20,6 +20,7 @@ export const directoryModule = createModule({
         directories: [Directory]!
         createdAt: String!
         updatedAt: String!
+        deletedAt: String
       }
 
       type DirectoryContentsResult {
@@ -30,6 +31,7 @@ export const directoryModule = createModule({
         key: String!
         createdAt: String!
         updatedAt: String!
+        deletedAt: String
         type: String!
       }
 
