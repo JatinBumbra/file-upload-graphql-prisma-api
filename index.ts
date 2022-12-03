@@ -3,10 +3,11 @@ import { config } from "dotenv"
 import { graphqlHTTP } from "express-graphql"
 import { createApplication, createModule, gql } from "graphql-modules"
 import { File, Directory, FileVersion } from "@prisma/client"
-import { directoryModule } from "./directory/schema"
-import { fileVersionModule } from "./fileVersion/schema"
-import { fileModule } from "./file/schema"
+import { directoryModule, findDirectories } from "./directory"
+import { fileVersionModule } from "./fileVersion"
+import { fileModule, findFiles } from "./file"
 import { downloadLocalFile, uploadLocalFile } from "./bucket"
+import { prismaClient } from "./prisma"
 
 config()
 
@@ -47,7 +48,15 @@ const mainModule = createModule({
       },
     },
     Query: {
-      searchFiles: () => [],
+      searchFiles: async (
+        _: unknown,
+        { query }: { query: string }
+      ): Promise<Array<Directory | File>> => {
+        const prisma = prismaClient()
+        const directories = await findDirectories(prisma, query)
+        const files = await findFiles(prisma, query)
+        return [...directories, ...files]
+      },
     },
   },
 })
