@@ -13,15 +13,21 @@ export type CreateFileInput = Prisma.FileGetPayload<typeof fileInputFields> &
   Omit<CreateFileVersionInput, "fileId" | "key"> & { key?: FileVersion["key"] }
 
 export async function createFileRecord(
-  primsaClient: PrismaClient,
+  client: PrismaClient,
   file: CreateFileInput
 ): Promise<{ file: File; url: string }> {
   const { name, directoryId, mimeType, size, key: keyInput } = file
   const key = keyInput ?? (await generateId())
 
+  const directory = await client.directory.findUnique({
+    where: { id: directoryId },
+  })
+  const ancestors = directory?.ancestors ?? []
+
   const data = {
     name,
     directoryId,
+    ancestors: [...ancestors, directoryId],
     versions: {
       create: {
         name,
@@ -31,7 +37,7 @@ export async function createFileRecord(
       },
     },
   }
-  const fileData = await primsaClient.file.create({
+  const fileData = await client.file.create({
     data,
     include: { versions: true },
   })
