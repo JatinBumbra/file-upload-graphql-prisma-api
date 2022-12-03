@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Request } from "express"
 import { config } from "dotenv"
 import { graphqlHTTP } from "express-graphql"
 import { createApplication, createModule, gql } from "graphql-modules"
@@ -7,7 +7,7 @@ import { prismaClient } from "./prisma"
 import { directoryModule } from "./directory/schema"
 import { fileVersionModule } from "./fileVersion/schema"
 import { fileModule } from "./file/schema"
-import { downloadLocalFile } from "./bucket"
+import { downloadLocalFile, uploadLocalFile } from "./bucket"
 
 config()
 
@@ -63,6 +63,25 @@ app.get("/file", function (req, res) {
     .then((file) => {
       res.setHeader("Content-Type", file.ContentType)
       res.status(200).send(file.Body)
+    })
+    .catch((error: Error) => {
+      res.status(500).json({ error })
+    })
+})
+
+app.use(/\/((?!graphql).)*/, express.raw({ limit: "100000kb", type: "*/*" }))
+app.post("/file", function (req: Request<unknown, unknown, Buffer>, res) {
+  const { headers } = req
+  const data = {
+    ContentType: headers["content-type"] ?? "application/octet-stream",
+    Body: req.body,
+  }
+  uploadLocalFile(
+    `${req.protocol}://${req.get("host") ?? ""}${req.originalUrl}`,
+    data
+  )
+    .then(() => {
+      res.status(201).send(true)
     })
     .catch((error: Error) => {
       res.status(500).json({ error })
