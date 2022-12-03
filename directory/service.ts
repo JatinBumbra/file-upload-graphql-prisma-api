@@ -250,11 +250,11 @@ export async function moveDirectory(
 
   const childFilesOfCurrentDir = await client.file.findMany({
     where: { directoryId: id },
-    select: { id: true, ancestors: true },
+    select: { id: true, ancestors: true, history: true },
   })
   const descendentFilesOfCurrentDir = await client.file.findMany({
     where: { ancestors: { has: currentDirectory.id } },
-    select: { id: true, ancestors: true },
+    select: { id: true, ancestors: true, history: true },
   })
   const descendentDirectoriesOfCurrentDir = await client.directory.findMany({
     where: { ancestors: { has: currentDirectory.id } },
@@ -272,6 +272,14 @@ export async function moveDirectory(
         where: { id: file.id },
         data: {
           ancestors: updatedAncestors,
+          history: [
+            ...(file.history &&
+            typeof file.history === "object" &&
+            Array.isArray(file.history)
+              ? file.history
+              : []),
+            { action: "move_dir", ancestors: JSON.stringify(updatedAncestors) },
+          ],
         },
       })
     }),
@@ -288,6 +296,14 @@ export async function moveDirectory(
         where: { id: file.id },
         data: {
           ancestors: updatedAncestors,
+          history: [
+            ...(file.history &&
+            typeof file.history === "object" &&
+            Array.isArray(file.history)
+              ? file.history
+              : []),
+            { action: "move_dir", ancestors: JSON.stringify(updatedAncestors) },
+          ],
         },
       })
     }),

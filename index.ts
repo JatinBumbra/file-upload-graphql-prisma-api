@@ -3,6 +3,7 @@ import { config } from "dotenv"
 import { graphqlHTTP } from "express-graphql"
 import { createApplication, createModule, gql } from "graphql-modules"
 import { File, Directory, FileVersion } from "@prisma/client"
+import { GraphQLJSON } from "graphql-type-json"
 import { directoryModule, findDirectories } from "./directory"
 import { fileVersionModule } from "./fileVersion"
 import { fileModule, findFiles } from "./file"
@@ -16,6 +17,8 @@ const mainModule = createModule({
   dirname: __dirname,
   typeDefs: [
     gql`
+      scalar JSON
+
       interface FileNode {
         id: ID!
         name: String!
@@ -40,6 +43,7 @@ const mainModule = createModule({
     `,
   ],
   resolvers: {
+    JSON: GraphQLJSON,
     FileNode: {
       __resolveType(obj: File | FileVersion | Directory) {
         if (Object.prototype.hasOwnProperty.call(obj, "parentId")) {

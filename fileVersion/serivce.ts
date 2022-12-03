@@ -1,5 +1,6 @@
 import { Pagination } from "interfaces"
 import { File, FileVersion, Prisma, PrismaClient } from "@prisma/client"
+import { updateFileHistory } from "../file"
 import { getBucket } from "../bucket"
 import { generateId } from "../util/generators"
 
@@ -33,6 +34,14 @@ export async function createFileVersionRecord(
   const version = await client.fileVersion.create({
     data: { ...fileVersion, key },
     include: { file: true },
+  })
+  await client.file.update({
+    where: { id: file.id },
+    data: {
+      history: await updateFileHistory(client, file.id, {
+        version: JSON.stringify(version),
+      }),
+    },
   })
 
   const bucket = getBucket()

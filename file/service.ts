@@ -12,6 +12,37 @@ const fileInputFields = Prisma.validator<Prisma.FileArgs>()({
 export type CreateFileInput = Prisma.FileGetPayload<typeof fileInputFields> &
   Omit<CreateFileVersionInput, "fileId" | "key"> & { key?: FileVersion["key"] }
 
+export async function updateFileHistory(
+  client: PrismaClient,
+  id: File["id"],
+  entry: Record<string, string | number | boolean>
+): Promise<Prisma.JsonArray> {
+  const file = await client.file.findUnique({
+    where: { id },
+    select: { history: true },
+  })
+
+  if (!file) {
+    throw new Error("File not found")
+  }
+
+  const history =
+    file.history &&
+    typeof file.history === "object" &&
+    Array.isArray(file.history)
+      ? file.history
+      : []
+
+  const updatedHistory = [
+    ...history,
+    {
+      ...entry,
+      date: new Date().toString(),
+    },
+  ]
+  return updatedHistory
+}
+
 export async function createFileRecord(
   client: PrismaClient,
   file: CreateFileInput
@@ -27,6 +58,15 @@ export async function createFileRecord(
   const data = {
     name,
     directoryId,
+    history: [
+      {
+        action: "created",
+        name,
+        mimeType,
+        size,
+        directoryId,
+      },
+    ],
     ancestors: [...ancestors, directoryId],
     versions: {
       create: {
@@ -70,10 +110,18 @@ export async function moveFile(
   }
 
   const { ancestors } = directory
+  const updatedHistory = await updateFileHistory(client, id, {
+    action: "move",
+    directory: directory.id,
+  })
 
   return await client.file.update({
     where: { id },
-    data: { directoryId, ancestors: [...ancestors, directoryId] },
+    data: {
+      directoryId,
+      ancestors: [...ancestors, directoryId],
+      history: updatedHistory,
+    },
     include: { versions: true },
   })
 }
@@ -83,9 +131,13 @@ export async function renameFile(
   id: File["id"],
   name: File["name"]
 ): Promise<File> {
+  const updatedHistory = await updateFileHistory(client, id, {
+    action: "rename",
+    name,
+  })
   return await client.file.update({
     where: { id },
-    data: { name },
+    data: { name, history: updatedHistory },
     include: { versions: true },
   })
 }
@@ -97,7 +149,12 @@ export async function deleteFile(
   const fileVersions = await client.file
     .findUnique({ where: { id } })
     .versions()
+  const updatedHistory = await updateFileHistory(client, id, {
+    action: "delete",
+    deleted: true,
+  })
   await client.$transaction([
+    client.file.update({ where: { id }, data: { history: updatedHistory } }),
     client.fileVersion.deleteMany({ where: { fileId: id } }),
     client.file.delete({ where: { id } }),
   ])
